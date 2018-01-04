@@ -1,0 +1,23 @@
+grant codeBase "file:./-" {
+	permission java.net.SocketPermission "localhost:6666-6669", "listen,resolve";
+	permission java.net.SocketPermission "*:*", "accept";
+	permission java.io.FilePermission "Server", "read, write";
+	permission java.io.FilePermission "Server/-", "read, write, delete";
+	permission java.util.PropertyPermission "user.dir", "read";
+
+	// System.console();
+	permission java.lang.RuntimePermission "writeFileDescriptor";
+	permission java.lang.RuntimePermission "readFileDescriptor";
+
+	// Verificar keystore
+	permission java.util.PropertyPermission "user.home", "read";
+	permission java.io.FilePermission "${user.home}/.keystore", "read";
+
+	// Executar shell script
+	permission java.io.FilePermission "<<ALL FILES>>", "execute";
+	
+};
+
+grant codeBase "file:${java.home}/lib/ext/*" {
+	permission java.security.AllPermission;
+};

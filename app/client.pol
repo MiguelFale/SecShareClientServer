@@ -1,0 +1,31 @@
+//keystore "${user.home}${/}client.keystore";
+
+grant codeBase "file:./-" {
+	permission java.io.FilePermission "./temp.txt", "read,delete";
+	permission java.io.FilePermission "./temp", "read,delete";
+	permission java.net.SocketPermission "*:6666-6669", "connect, resolve";
+	permission java.io.FilePermission "*", "read, write, delete";
+	permission java.io.FilePermission "-", "read";
+
+	// System.console();
+	permission java.lang.RuntimePermission "writeFileDescriptor";
+	permission java.lang.RuntimePermission "readFileDescriptor";
+
+	// Verificar truststore
+	permission java.util.PropertyPermission "user.home", "read";
+	permission java.io.FilePermission "${user.home}/.truststore", "read";
+};
+
+grant codeBase "file:${java.home}/lib/ext/*" {
+	permission java.security.AllPermission;
+};
+
+// Grant these permissions to code loaded from Sun but only if it is signed by grupo15.
+/*grant signedBy "grupo15", codeBase "http://www.sun.com/" {
+    permission java.security.AllPermission;
+};
+
+// Grant these permissions to code signed by grupo15, no matter where it was loaded from
+grant signedBy "grupo15" {
+    permission java.net.SocketPermission "*:1024-", "accept, connect, listen, resolve";
+};*/

@@ -1,0 +1,73 @@
+COMPILAR==============================================================================================================================
+
+javac SecShareClient.java SecShareServer.java
+SSL===================================================================================================================================
+
+1) Criar keytool do servidor (contém chaves RSA do próprio): keytool -genkeypair -alias server -keyalg RSA
+				       Passe: <password>
+				       Efeito: Cria um ficheiro chamado ".keystore" na HOME. ls -la para ver. Se me lembro corretamente,
+				       e' porque foi definido assim no ficheiro de politicas
+
+2) Exportar o certificado do servidor: keytool -export -alias server -file serv.cer
+				       Passe: <password> ( a mesma do passo anterior )
+				       Efeito: cria serv.cer na pasta atual (tem o certificado do sevidor)
+
+3) Importar certificado na truststore: keytool -import -alias server -keystore $HOME/.truststore -file serv.cer
+				       Passe: <password> ( a mesma do passo anterior )
+				       Efeito: Cria um ficheiro chamado ".truststore" na HOME. ls -la para ver.
+
+
+EXECUTAR===============================================================================================================================
+Notem que o comando do cliente varia a partir de "SecShareClient". No servidor podem usar outro porto entre 6666 e 6669.
+
+java -Djavax.net.debug=ssl,handshake -Djava.security.manager -Djava.security.policy==client.pol -Djavax.net.ssl.trustStore=$HOME/.truststore SecShareClient -u fale -a 127.0.0.1:6666 -c a.txt
+java -Djavax.net.debug=ssl,handshake -Djava.security.manager -Djava.security.policy==servidor.pol -Djavax.net.ssl.keyStore=$HOME/.keystore -Djavax.net.ssl.keyStorePassword=<password> SecShareServer 6666
+
+SEM DEBUGGING:
+java -Djava.security.manager -Djava.security.policy==client.pol -Djavax.net.ssl.trustStore=$HOME/.truststore SecShareClient -u fale -a 127.0.0.1:6666 -c a.txt
+java -Djava.security.manager -Djava.security.policy==servidor.pol -Djavax.net.ssl.keyStore=$HOME/.keystore -Djavax.net.ssl.keyStorePassword=<password> SecShareServer 6666
+
+Assinaturas=============================================================================================================================
+
+ As assinaturas são criadas executando-se os seguintes passos:
+1. obtém-se uma síntese dos dados
+2. assina-se (cifra-se) a síntese com a chave privada
+
+ As assinaturas são verificadas também em dois passos:
+1. obtém-se uma síntese dos dados
+2. verifica-se (decifra-se) a assinatura e compara-se com a síntese
+
+
+JAR E ASSINADO=============================================================================================================================
+https://www.youtube.com/watch?v=5MICw_5Y2tc
+Signing jars is effectively telling your customer "I made this, and I guarantee it won't mess up your system. If it does, come to me for retribution". This is why signed jars in client-side solution deployed from remote servers (applets / webstart) enjoy higher privileges than non-signed solutions do.
+
+
+jar cvf SecShareClient.jar SecShareClient.class
+jarsigner -keystore grupo<ID>.keystore -storepass <password> SecShareClient.jar grupo<ID>
+
+java -jar -Djava.security.manager -Djava.security.policy==client.pol -Djavax.net.ssl.trustStore=$HOME/.truststore SecShareClient.jar -u sergio -a 127.0.0.1:6666 -c a.txt
+java -jar -Djava.security.manager -Djava.security.policy==servidor.pol -Djavax.net.ssl.keyStore=$HOME/.keystore -Djavax.net.ssl.keyStorePassword=<password> SecShareServer.jar 6666
+
+
+IP TABLES======================================================================================================================================
+https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html -> tutorial iptables
+
+sudo /sbin/iptables -F faz flush de tudo
+sudo /sbin/iptables -F INPUT faz flush de tudo o que é INPUT
+
+sudo /sbin/iptables -A INPUT –s <IP remoto> –p icmp –j REJECT para rejeitar ligaçºoes 
+sudo /sbin/iptables -L INPUT para mostrar as ligaçºoes actualmente configuradas
+sudo /sbin/iptables –A INPUT –s <IP remoto> –p icmp –j DROP é tipo reject mas nao dá nada.
+sudo /sbin/iptables -A OUTPUT -d <IP remoto> -p icmp -j REJECT impede mandar pedidos para destino (-d)
+sudo /sbin/iptables -A OUTPUT -s <IP remoto> -p icmp -j REJECT impede saída de pedidos de source (-s)
+sudo /sbin/iptables -A OUTPUT -d <IP remoto parcial>/22 -p icmp -j REJECT impede mandar pedidos para rede. (notar nº de bits)
+
+
+bits desta rede - 8bits
+
+Mask:255.255.252.0
+
+8 + 8 + 6 = 22 bits para a rede
+
+10 para identificadores de maquinas, logo 2^10 para máquinas
